@@ -1,4 +1,4 @@
-import setuptools
+from setuptools import setup, find_namespace_packages
 
 dev = [
     "black==22.1.0",
@@ -6,14 +6,14 @@ dev = [
     "pytest==7.0.0"
 ]
 
-setuptools.setup(
+setup(
     name="vae",
     version="0.1.0",
     author="Daniel John Varoli",
     description="Variational Auto Encoder",
     url="https://github.com/djvaroli/vae",
-    packages=setuptools.find_namespace_packages(include=["tf.*"], where="vae"),
-    package_dir={"vae": "vae"},
+    packages=find_namespace_packages(include=["vae.*"], where="."),
+    package_dir={".": "vae"},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
