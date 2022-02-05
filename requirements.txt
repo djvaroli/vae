@@ -34,6 +34,7 @@ h5py==3.6.0
 html5lib==1.1
 idna==3.3
 importlib-metadata==4.10.1
+iniconfig==1.1.1
 ipykernel @ file:///opt/concourse/worker/volumes/live/616a1efd-eea7-4044-41a3-24697c50c98e/volume/ipykernel_1633545427960/work/dist/ipykernel-6.4.1-py3-none-any.whl
 ipython @ file:///opt/concourse/worker/volumes/live/30ed1b87-509b-450c-73d8-df2bf1158106/volume/ipython_1643818163353/work
 ipython-genutils @ file:///tmp/build/80754af9/ipython_genutils_1606773439826/work
@@ -78,12 +79,14 @@ pexpect @ file:///tmp/build/80754af9/pexpect_1605563209008/work
 pickleshare @ file:///tmp/build/80754af9/pickleshare_1606932040724/work
 pkginfo==1.8.2
 platformdirs==2.4.1
+pluggy==1.0.0
 poetry==1.1.12
 poetry-core==1.0.7
 prometheus-client @ file:///opt/conda/conda-bld/prometheus_client_1643788673601/work
 prompt-toolkit @ file:///tmp/build/80754af9/prompt-toolkit_1633440160888/work
 protobuf==3.19.4
 ptyprocess @ file:///tmp/build/80754af9/ptyprocess_1609355006118/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
+py==1.11.0
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
@@ -92,6 +95,7 @@ pylev==1.4.0
 pylint==2.12.2
 pyparsing @ file:///tmp/build/80754af9/pyparsing_1635766073266/work
 pyrsistent @ file:///opt/concourse/worker/volumes/live/ac52847c-5646-4583-7286-af47061006cb/volume/pyrsistent_1636111017177/work
+pytest==7.0.0
 python-dateutil @ file:///tmp/build/80754af9/python-dateutil_1626374649649/work
 pyzmq @ file:///opt/concourse/worker/volumes/live/12b008ff-2acb-4e15-682d-fce50395a9d4/volume/pyzmq_1638434992289/work
 qtconsole @ file:///opt/conda/conda-bld/qtconsole_1643819126524/work
@@ -120,6 +124,7 @@ tornado @ file:///opt/concourse/worker/volumes/live/05341796-4198-4ded-4a9a-332f
 traitlets @ file:///tmp/build/80754af9/traitlets_1636710298902/work
 typing_extensions==4.0.1
 urllib3==1.26.8
+-e git+https://github.com/djvaroli/vae.git@fa6fdc5d9e62faeab04f3a14dc3371391f53f8dd#egg=vae
 virtualenv==20.13.0
 wcwidth @ file:///Users/ktietz/demo/mc3/conda-bld/wcwidth_1629357192024/work
 webencodings==0.5.1
