@@ -1,0 +1,10 @@
+
+#
+*.egg-info
+
+# dev notebooks
+*_dev.ipynb
+
+#
+.idea
+__pycache__
