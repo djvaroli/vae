@@ -8,7 +8,7 @@ from tensorflow.keras.layers import (BatchNormalization, Conv2D,
                                      Input, Layer, LeakyReLU, Reshape)
 from tensorflow.keras.models import Model
 
-from ..utilities import make_list_if_not
+from ..utilites import make_list_if_not
 
 
 TensorOrNDArray = Union[Tensor, np.ndarray]
