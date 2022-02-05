@@ -12,7 +12,8 @@ setuptools.setup(
     author="Daniel John Varoli",
     description="Variational Auto Encoder",
     url="https://github.com/djvaroli/vae",
-    package_dir={"": ""},
+    packages=setuptools.find_namespace_packages(include=["vae*"], where="src"),
+    package_dir={"": "src"},
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
