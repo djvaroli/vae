@@ -1,10 +1,6 @@
-from setuptools import setup, find_namespace_packages
+from setuptools import find_namespace_packages, setup
 
-dev = [
-    "black==22.1.0",
-    "isort==5.10.1",
-    "pytest==7.0.0"
-]
+dev = ["black==22.1.0", "isort==5.10.1", "pytest==7.0.0"]
 
 setup(
     name="vae",
@@ -18,7 +14,5 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-        "tensorflow>=2.7.0"
-    ]
+    install_requires=["tensorflow>=2.7.0"],
 )

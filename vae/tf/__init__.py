@@ -1,2 +1,2 @@
-from .vae import CVAE
 from .losses import VAELoss
+from .vae import CVAE
