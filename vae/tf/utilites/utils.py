@@ -55,7 +55,7 @@ def compute_conv_transpose_output_shape(
         n_layers:
 
     Returns:
-        An integer representing the output dimension of a convolutional layer
+        An integer representing the output dimension of a convolutional transpose layer
     """
     single_layer_output_shape = lambda f, k, s, p: s * f + k - 2 * p
 
