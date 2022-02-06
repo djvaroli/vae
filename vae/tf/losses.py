@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import List, Tuple
 
 import tensorflow as tf
 from tensorflow import Tensor
@@ -6,9 +6,7 @@ from tensorflow.keras.losses import Loss
 
 
 class VAELoss(Loss):
-    """
-
-    """
+    """ """
 
     def __init__(self, beta: float = 1.0):
         """
@@ -16,7 +14,9 @@ class VAELoss(Loss):
         :param beta: Controls the relative strength of the KL Divergence term in the total VAE loss.
                      If set to 1.0 (default) represents a regular VAE.
         """
-        super(VAELoss, self).__init__(reduction=tf.keras.losses.Reduction.NONE)  # otherwise doesn't return a Tuple
+        super(VAELoss, self).__init__(
+            reduction=tf.keras.losses.Reduction.NONE
+        )  # otherwise doesn't return a Tuple
         self.beta = beta
 
     def kl_divergence(self, mean: Tensor, logvar: Tensor) -> Tensor:
@@ -30,10 +30,14 @@ class VAELoss(Loss):
 
         """
         return -0.5 * tf.reduce_mean(
-            tf.reduce_sum(1 + logvar - tf.math.square(mean) - tf.math.exp(logvar), axis=1)
+            tf.reduce_sum(
+                1 + logvar - tf.math.square(mean) - tf.math.exp(logvar), axis=1
+            )
         )
 
-    def call(self, y_true: tf.Tensor, outputs: List) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    def call(
+        self, y_true: tf.Tensor, outputs: List
+    ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         def _as_tensors(*args):
             return [tf.convert_to_tensor(x) for x in args]
 

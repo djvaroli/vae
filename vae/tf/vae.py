@@ -1,23 +1,23 @@
-from typing import Callable, List, Tuple, Union
+from typing import List
 
-import numpy as np
 import tensorflow as tf
 from tensorflow import Tensor
-from tensorflow.keras.layers import (BatchNormalization, Conv2D,
-                                     Conv2DTranspose, Dense, Dropout, Flatten,
-                                     Input, Layer, LeakyReLU, Reshape)
+from tensorflow.keras.layers import (
+    BatchNormalization,
+    Conv2D,
+    Conv2DTranspose,
+    Dense,
+    Dropout,
+    Flatten,
+    Input,
+    Layer,
+    LeakyReLU,
+    Reshape,
+)
 from tensorflow.keras.models import Model
 
-from ..utilites import make_list_if_not
-
-
-TensorOrNDArray = Union[Tensor, np.ndarray]
-TupleOrInt = Union[Tuple, int]
-ListOrInt = Union[List, int]
-ThreeTensors = Tuple[Tensor, Tensor, Tensor]
-ImageShape = Tuple[int, int, int]
-StringOrCallable = Union[str, Callable]
-
+from vae.tf.utilites import make_list_if_not
+from vae.tf.utilites.data_types import TupleOrInt, ThreeTensors, ListOrInt, StringOrCallable, Tuple, TensorOrNDArray
 
 def _get_conv_block(
     filters: int,
@@ -260,15 +260,15 @@ class CVAE(Model):
             use_bias,
             padding,
             output_activation,
-            dropout_rate
+            dropout_rate,
         )
 
     # a hack for plotting a model
     def _model(self, input_signature: Tuple):
-      i = Input(input_signature)
-      z, means, log_vars = self.encoder(i)
-      o = self.decoder(z)
-      return Model(i, o)
+        i = Input(input_signature)
+        z, means, log_vars = self.encoder(i)
+        o = self.decoder(z)
+        return Model(i, o)
 
     def encode(self, inputs: TensorOrNDArray) -> ThreeTensors:
         return self.encoder(inputs, training=False)
