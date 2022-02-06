@@ -52,4 +52,5 @@ class VAELoss(Loss):
 
         reconstruction_loss = tf.reduce_mean(bce_loss)
 
-        return reconstruction_loss + self.beta * kl_loss
+        return reconstruction_loss + self.beta * kl_loss, reconstruction_loss, self.beta * kl_loss
+

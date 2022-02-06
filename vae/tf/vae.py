@@ -270,6 +270,21 @@ class CVAE(Model):
         o = self.decoder(z)
         return Model(i, o)
 
+    def call(self, inputs: TensorOrNDArray, training: bool = None, mask=None):
+        """Performs a single forward pass through the model.
+
+        Args:
+            inputs ([type]): [description]
+            training ([type], optional): [description]. Defaults to None.
+            mask ([type], optional): [description]. Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """
+        
+        z, mean, logvars = self.encode(inputs, training=False)
+        return self.decode(z, training=False)
+    
     def encode(self, inputs: TensorOrNDArray) -> ThreeTensors:
         return self.encoder(inputs, training=False)
 
@@ -280,10 +295,10 @@ class CVAE(Model):
         with tf.GradientTape() as tape:
             z, means, log_vars = self.encoder(data)
             reconstruction = self.decoder(z)
-            loss = self.loss(data, [reconstruction, means, log_vars])
+            total_loss, reconstruction_loss, kl_loss = self.loss(data, [reconstruction, means, log_vars])
 
         trainable_vars = self.trainable_variables
-        gradients = tape.gradient(loss, trainable_vars)
+        gradients = tape.gradient(total_loss, trainable_vars)
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
 
-        return {"loss": loss}
+        return {"loss": total_loss, "reconstruction_loss": reconstruction_loss, "kl_loss": kl_loss}
