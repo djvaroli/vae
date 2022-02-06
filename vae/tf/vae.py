@@ -295,7 +295,8 @@ class CVAE(Model):
         with tf.GradientTape() as tape:
             z, means, log_vars = self.encoder(data)
             reconstruction = self.decoder(z)
-            total_loss, reconstruction_loss, kl_loss = self.loss(data, [reconstruction, means, log_vars])
+            loss = self.loss(data, [reconstruction, means, log_vars])
+            total_loss, reconstruction_loss, kl_loss = loss[0], loss[1], loss[2]
 
         trainable_vars = self.trainable_variables
         gradients = tape.gradient(total_loss, trainable_vars)
