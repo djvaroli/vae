@@ -1,11 +1,9 @@
-from typing import Callable
-from typing import Tuple, Optional 
+from typing import Callable, Optional, Tuple
 
+from tensorflow.keras.preprocessing.image import (DirectoryIterator,
+                                                  ImageDataGenerator)
 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator, DirectoryIterator
-
-
-_0to255_to_0to1 = lambda x: x / 255.
+_0to255_to_0to1 = lambda x: x / 255.0
 _0to1_to_0to255 = lambda x: x * 255  # still need to convert to an int after that
 
 
@@ -33,13 +31,14 @@ def get_directory_iterator(
         DirectoryIterator yielding a batch of images
     """
     if image_generator is None:
-        image_generator = ImageDataGenerator(preprocessing_function=preprocessing_function)
+        image_generator = ImageDataGenerator(
+            preprocessing_function=preprocessing_function
+        )
 
-    return DirectoryIterator(
+    return image_generator.flow_from_directory(
         directory,
-        image_generator,
-        target_size=target_shape,
-        color_mode=color_mode,
+        target_shape,
+        color_mode,
         class_mode=class_mode,
         batch_size=batch_size,
         **kwargs

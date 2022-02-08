@@ -51,6 +51,9 @@ class VAELoss(Loss):
         bce_loss = tf.reduce_sum(bce_loss, axis=[1, 2])  # shape
 
         reconstruction_loss = tf.reduce_mean(bce_loss)
-        
-        return reconstruction_loss + self.beta * kl_loss, reconstruction_loss, self.beta * kl_loss
 
+        return (
+            reconstruction_loss + self.beta * kl_loss,
+            reconstruction_loss,
+            self.beta * kl_loss,
+        )

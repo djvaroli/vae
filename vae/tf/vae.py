@@ -1,24 +1,19 @@
-from typing import List
+from typing import List, Tuple
 
 import tensorflow as tf
 from tensorflow import Tensor
-from tensorflow.keras.layers import (
-    BatchNormalization,
-    Conv2D,
-    Conv2DTranspose,
-    Dense,
-    Dropout,
-    Flatten,
-    Input,
-    Layer,
-    LeakyReLU,
-    Reshape,
-)
+from tensorflow.keras.layers import (BatchNormalization, Conv2D,
+                                     Conv2DTranspose, Dense, Flatten, Input,
+                                     Layer, LeakyReLU, Reshape)
 from tensorflow.keras.models import Model
 
 from vae.tf.utilites import make_list_if_not
-from vae.tf.utilites.data_types import TupleOrInt, ThreeTensors, ListOrInt, StringOrCallable, Tuple, TensorOrNDArray
+from vae.tf.utilites.data_types import (ListOrInt, StringOrCallable,
+                                        TensorOrNDArray, ThreeTensors,
+                                        TupleOrInt)
 
+
+# @title Model Blocks
 def _get_conv_block(
     filters: int,
     kernel_size: TupleOrInt,
@@ -52,14 +47,12 @@ def _get_conv_block(
     ]
 
 
-def _get_conv_transpose_blocks(
-    filters: List,
+def _get_conv_transpose_block(
+    filters: int,
     kernel_size: ListOrInt,
     strides: ListOrInt,
     use_bias: bool,
     padding: str,
-    dropout_rate: float,
-    output_activation: str,
 ) -> List[Layer]:
     """
     Returns a block consisting of A 2D Convolutional Transpose layer, batch normalization layer
@@ -71,67 +64,28 @@ def _get_conv_transpose_blocks(
         use_bias:
         padding:
         dropout_rate:
-        output_activation
 
     Returns:
 
     """
-    layers = []
-    for filters_ in filters[:-1]:
-        layers.extend(
-            [
-                Conv2DTranspose(
-                    filters_,
-                    kernel_size=kernel_size,
-                    strides=strides,
-                    use_bias=use_bias,
-                    padding=padding,
-                ),
-                LeakyReLU(),
-                Dropout(dropout_rate),
-            ]
-        )
 
-    layers.append(
+    return [
         Conv2DTranspose(
-            filters[-1],
+            filters,
             kernel_size=kernel_size,
             strides=strides,
             use_bias=use_bias,
             padding=padding,
-            activation=output_activation,
-        )
-    )
-
-    return layers
+        ),
+        LeakyReLU(),
+    ]
 
 
 class CEncoder:
     def __init__(
-        self,
-        latent_features: int,
-        filters: ListOrInt,
-        kernel_size: TupleOrInt = (3, 3),
-        strides: TupleOrInt = (2, 2),
-        use_bias: bool = False,
-        padding: str = "same",
-        dropout_rate: float = 0.0,
-        name: str = "convolutional-encoder",
+        self, layers: List[Layer], name: str = "convolutional-encoder",
     ):
-        self.name = name
-        self.latent_features = latent_features
-        self.kernel_size = kernel_size
-        self.use_bias = use_bias
-        self.dropout_rate = dropout_rate
-        self.filters = make_list_if_not(filters)
-
-        self.layers = []
-        for filters_ in self.filters:
-            self.layers.extend(
-                _get_conv_block(filters_, kernel_size, strides, use_bias, padding)
-            )
-
-        self.layers.extend([Flatten(), Dense(self.latent_features * 2)])
+        self.layers = layers
 
     def __call__(self, inputs: Tensor, *args, **kwargs) -> ThreeTensors:
         """
@@ -171,39 +125,9 @@ class CEncoder:
 
 class CDecoder:
     def __init__(
-        self,
-        reshape_into: Tuple[int, int, int],
-        filters: ListOrInt,
-        kernel_size: TupleOrInt = (3, 3),
-        strides: TupleOrInt = (2, 2),
-        use_bias: bool = False,
-        padding: str = "same",
-        output_activation: StringOrCallable = "sigmoid",
-        dropout_rate: float = 0.0,
-        name: str = "convolutional-decoder",
+        self, layers: List[Layer], name: str = "convolutional-decoder",
     ):
-        self.reshape_into = reshape_into
-        self.name = name
-        self.filters = make_list_if_not(filters)
-        self.kernel_size = kernel_size
-        self.use_bias = use_bias
-        self.dropout_rate = dropout_rate
-        self.output_activation = output_activation
-
-        a, b, c = reshape_into
-        self.layers = [Dense(a * b * c), Reshape(reshape_into)]
-
-        self.layers.extend(
-            _get_conv_transpose_blocks(
-                filters,
-                kernel_size,
-                strides,
-                use_bias,
-                padding,
-                dropout_rate,
-                output_activation,
-            )
-        )
+        self.layers = layers
 
     def __call__(self, inputs, *args, **kwargs):
         x = inputs
@@ -216,57 +140,15 @@ class CDecoder:
 class CVAE(Model):
     name = "CVAE"
 
-    def __init__(
-        self,
-        latent_features: int,
-        encoder_filters: ListOrInt,
-        decoder_filters: ListOrInt,
-        reshape_into: Tuple[int, int, int],
-        hidden_activation: StringOrCallable = "relu",
-        output_activation: StringOrCallable = "sigmoid",
-        kernel_size: TupleOrInt = (5, 5),
-        strides: TupleOrInt = (2, 2),
-        use_bias: bool = False,
-        padding: str = "same",
-        dropout_rate: float = 0.0,
-    ):
+    def __init__(self, encoder: Model, decoder: Model):
         super(CVAE, self).__init__()
-        self.image_shape = latent_features
-        self.encoder_filters = encoder_filters
-        self.decoder_filters = decoder_filters
-        self.reshape_into = reshape_into
-        self.output_activation = output_activation
-        self.kernel_size = kernel_size
-        self.strides = strides
-        self.use_bias = use_bias
-        self.padding = padding
-        self.dropout_rate = dropout_rate
-
-        self.encoder = CEncoder(
-            latent_features,
-            encoder_filters,
-            kernel_size,
-            strides,
-            use_bias,
-            padding,
-            dropout_rate,
-        )
-
-        self.decoder = CDecoder(
-            reshape_into,
-            decoder_filters,
-            kernel_size,
-            strides,
-            use_bias,
-            padding,
-            output_activation,
-            dropout_rate,
-        )
+        self.encoder = encoder
+        self.decoder = decoder
 
     # a hack for plotting a model
-    def _model(self, input_signature: Tuple):
-        i = Input(input_signature)
-        z, means, log_vars = self.encoder(i)
+    def _model(self):
+        i = self.encoder.inputs
+        z, means, log_vars = self.encoder.outputs
         o = self.decoder(z)
         return Model(i, o)
 
@@ -281,15 +163,15 @@ class CVAE(Model):
         Returns:
             [type]: [description]
         """
-        
-        z, mean, logvars = self.encode(inputs, training=False)
-        return self.decode(z, training=False)
-    
-    def encode(self, inputs: TensorOrNDArray) -> ThreeTensors:
-        return self.encoder(inputs, training=False)
 
-    def decode(self, inputs: TensorOrNDArray) -> Tensor:
-        return self.decoder(inputs)
+        z, mean, logvars = self.encode(inputs, training=training)
+        return self.decode(z, training=training)
+
+    def encode(self, inputs: TensorOrNDArray, training: bool = None) -> ThreeTensors:
+        return self.encoder(inputs, training=training)
+
+    def decode(self, inputs: TensorOrNDArray, training: bool = None) -> Tensor:
+        return self.decoder(inputs, training=training)
 
     def train_step(self, data):
         with tf.GradientTape() as tape:
@@ -302,4 +184,167 @@ class CVAE(Model):
         gradients = tape.gradient(total_loss, trainable_vars)
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
 
-        return {"loss": total_loss, "reconstruction_loss": reconstruction_loss, "kl_loss": kl_loss}
+        return {
+            "loss": total_loss,
+            "reconstruction_loss": reconstruction_loss,
+            "kl_loss": kl_loss,
+        }
+
+    @classmethod
+    def for_MNIST(
+        cls,
+        latent_features: int = 2,
+        dropout_rate: float = 0.0,
+        output_activation: StringOrCallable = "sigmoid",
+    ) -> "CVAE":
+        """Returns an instance of a Conv VAE for use on the MNIST dataset.
+        Assumes images are of shape (28, 28, 1)
+        """
+        a, b, c = 7, 7, 64
+        reshape_into = (a, b, c)
+
+        encoder_layers = [
+            *_get_conv_block(256, 3, 1, use_bias=False, padding="same"),
+            *_get_conv_block(128, 3, 1, use_bias=False, padding="same"),
+            *_get_conv_block(64, 3, 2, use_bias=False, padding="same"),
+            *_get_conv_block(32, 3, 2, use_bias=False, padding="same"),
+            Flatten(),
+            Dense(latent_features * 2),
+        ]
+
+        decoder_layers = [
+            Dense(a * b * c),
+            Reshape(reshape_into),
+            *_get_conv_transpose_block(64, 5, 1, False, "same", dropout_rate),
+            *_get_conv_transpose_block(128, 5, 2, False, "same", dropout_rate),
+            *_get_conv_transpose_block(256, 3, 1, False, "same", dropout_rate),
+            *_get_conv_transpose_block(512, 3, 1, False, "same", dropout_rate),
+            Conv2DTranspose(
+                1,
+                kernel_size=3,
+                strides=2,
+                use_bias=False,
+                padding="same",
+                activation=output_activation,
+            ),
+        ]
+
+        encoder = CEncoder(layers=encoder_layers)
+        decoder = CDecoder(layers=decoder_layers)
+
+        # create the models
+        inputs = Input((28, 28, 1))
+        x, means, logvars = encoder(inputs)
+        encoder_model = Model(inputs, [x, means, logvars])
+
+        rec = decoder(x)
+        decoder_model = Model(x, rec)
+
+        return cls(encoder_model, decoder_model)
+
+    @classmethod
+    def for_SIMPSONS(
+        cls,
+        latent_features: int = 50,
+        dropout_rate: float = 0.0,
+        output_activation: StringOrCallable = "sigmoid",
+    ) -> "CVAE":
+        """Creates an instance of a CVAE for use with the Simpsons Faces dataset
+        """
+        # target shape 200 200 3
+
+        a, b, c = 25, 25, 4
+        reshape_into = (a, b, c)
+
+        encoder_layers = [
+            *_get_conv_block(8, 5, 1, use_bias=False, padding="same"),
+            *_get_conv_block(16, 5, 1, use_bias=False, padding="same"),
+            *_get_conv_block(32, 5, 1, use_bias=False, padding="same"),
+            *_get_conv_block(64, 5, 2, use_bias=False, padding="same"),
+            *_get_conv_block(128, 5, 2, use_bias=False, padding="same"),
+            *_get_conv_block(256, 5, 2, use_bias=False, padding="same"),
+            *_get_conv_block(512, 5, 2, use_bias=False, padding="same"),
+            Flatten(),
+            Dense(latent_features * 2),
+        ]
+
+        decoder_layers = [
+            Dense(a * b * c),
+            Reshape(reshape_into),
+            *_get_conv_transpose_block(512, 5, 1, False, "same", dropout_rate),
+            *_get_conv_transpose_block(256, 5, 1, False, "same", dropout_rate),
+            *_get_conv_transpose_block(128, 5, 1, False, "same", dropout_rate),
+            *_get_conv_transpose_block(128, 5, 1, False, "same", dropout_rate),
+            *_get_conv_transpose_block(128, 5, 2, False, "same", dropout_rate),
+            *_get_conv_transpose_block(64, 5, 2, False, "same", dropout_rate),
+            Conv2DTranspose(
+                3,
+                kernel_size=3,
+                strides=2,
+                use_bias=False,
+                padding="same",
+                activation=output_activation,
+            ),
+        ]
+
+        encoder = CEncoder(layers=encoder_layers)
+        decoder = CDecoder(layers=decoder_layers)
+
+        # create the models
+        inputs = Input((200, 200, 3))
+        x, means, logvars = encoder(inputs)
+        encoder_model = Model(inputs, [x, means, logvars])
+
+        rec = decoder(x)
+        decoder_model = Model(x, rec)
+
+        return cls(encoder_model, decoder_model)
+
+    @classmethod
+    def for_ANIME(
+        cls, latent_features: int = 50, output_activation: StringOrCallable = None
+    ) -> "CVAE":
+        """[summary]
+        """
+
+        a, b, c = 8, 8, 64
+        reshape_into = (a, b, c)
+
+        encoder_layers = [
+            *_get_conv_block(32, 5, 1, use_bias=False, padding="same"),
+            *_get_conv_block(64, 5, 1, use_bias=False, padding="same"),
+            *_get_conv_block(64, 5, 2, use_bias=False, padding="same"),
+            *_get_conv_block(64, 5, 2, use_bias=False, padding="same"),
+            Flatten(),
+            Dense(latent_features * 2),
+        ]
+
+        decoder_layers = [
+            Dense(a * b * c),
+            Reshape(reshape_into),
+            *_get_conv_transpose_block(256, 5, 2, False, "same"),
+            *_get_conv_transpose_block(128, 5, 2, False, "same"),
+            *_get_conv_transpose_block(64, 5, 2, False, "same"),
+            *_get_conv_transpose_block(32, 5, 1, False, "same"),
+            Conv2DTranspose(
+                3,
+                kernel_size=5,
+                strides=2,
+                use_bias=False,
+                padding="same",
+                activation=output_activation,
+            ),
+        ]
+
+        encoder = CEncoder(layers=encoder_layers)
+        decoder = CDecoder(layers=decoder_layers)
+
+        # create the models
+        inputs = Input((28, 28, 1))
+        x, means, logvars = encoder(inputs)
+        encoder_model = Model(inputs, [x, means, logvars])
+
+        rec = decoder(x)
+        decoder_model = Model(x, rec)
+
+        return cls(encoder_model, decoder_model)
