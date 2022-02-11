@@ -13,6 +13,7 @@ from ..training import RunParameters
 from ..data import get_directory_iterator
 from ..viz import image_grid_plot
 
+
 @click.command()
 @click.option('--latent_dimension', help='The dimension of the latent space')
 @click.option('--image_dimension', help="The height/width of the image. Images will be reshaped to squares.")
