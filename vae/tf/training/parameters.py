@@ -1,0 +1,41 @@
+from typing import Tuple
+from dataclasses import dataclass
+
+from tensorflow.keras.optimizers import Optimizer
+
+from .losses import VAELoss, SigmaVAELoss, _VAELossBase
+
+
+__vae_type_to_function = {
+    "vae": VAELoss,
+    "beta-vae": VAELoss,
+    "sigma-vae": SigmaVAELoss
+}
+
+
+@dataclass
+class RunParameters:
+    latent_dimension: int
+    image_shape: Tuple[int, int]
+    batch_size: int
+    dataset: str
+    vae_type: str
+    epochs: int
+    seed: int
+    beta: float = 1.
+    loss_scaling: float = 1e-4
+    learning_rate: float = 5e-4
+    gen_reference_mean: float = 0.
+    gen_reference_std: float = 1.
+    optimizer_config: dict = None
+    
+    def as_dict(self):
+        return self.__dict__
+
+    def set_optimizer_config(self, optimizer: Optimizer):
+        self.optimizer_config = optimizer.get_config()
+    
+    @property
+    def loss_fn(self) -> _VAELossBase:
+        return __vae_type_to_function[self.vae_type](self.beta, self.loss_scaling)
+        
