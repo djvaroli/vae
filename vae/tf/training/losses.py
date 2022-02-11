@@ -1,5 +1,4 @@
 from abc import ABC, abstractclassmethod
-from curses.ascii import SI
 from typing import Callable
 
 import tensorflow as tf

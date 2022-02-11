@@ -14,5 +14,9 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=["tensorflow>=2.7.0"],
+    install_requires=[
+        "tensorflow>=2.7.0",
+        "neptune-client==0.14.3",
+        "neptune-tensorflow-keras==0.9.9",
+    ],
 )

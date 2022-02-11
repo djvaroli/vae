@@ -1,6 +1,5 @@
 import os
 
-import click
 import neptune.new as neptune
 import numpy as np
 from neptune.new.integrations.tensorflow_keras import NeptuneCallback
