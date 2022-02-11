@@ -13,25 +13,6 @@ from ..training import RunParameters, SigmaVAELoss
 from ..viz import image_grid_plot
 
 
-@click.command()
-@click.option("--latent_dimension", help="The dimension of the latent space")
-@click.option(
-    "--image_dimension",
-    help="The height/width of the image. Images will be reshaped to squares.",
-)
-@click.option("--batch_size", help="The number of training samples in a single batch.")
-@click.option(
-    "--beta",
-    help="The value of the Beta term that multiplies the KL Divergence in the VAE loss calculation.",
-)
-@click.option("--epochs", help="The number of epochs to train the model for.")
-@click.option(
-    "--seed",
-    help="Random seed to use in operations involving randomness. Defaults to 25.",
-)
-@click.option(
-    "--loss_scaling", help="Scalar value to multiply total loss by. Defulates to 1e-4."
-)
 def train(
     latent_dimension: int,
     image_dimension: int,
