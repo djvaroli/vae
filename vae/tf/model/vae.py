@@ -15,7 +15,7 @@ from tensorflow.keras.layers import (
 )
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import plot_model
-from tf.data import ListOrInt, TensorOrNDArray, ThreeTensors, TupleOrInt
+from ..data import ListOrInt, TensorOrNDArray, ThreeTensors, TupleOrInt
 
 
 def _get_conv_block(

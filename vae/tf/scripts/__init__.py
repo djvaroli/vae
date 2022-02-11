@@ -1,0 +1,1 @@
+from .simpsons_sigma_vae import train as train_simpsons_sigma_vae
