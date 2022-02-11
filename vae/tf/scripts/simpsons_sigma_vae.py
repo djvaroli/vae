@@ -1,6 +1,7 @@
 import os
 
 import neptune.new as neptune
+from neptune.new.types import File
 import numpy as np
 from neptune.new.integrations.tensorflow_keras import NeptuneCallback
 from numpy.random import default_rng
@@ -9,7 +10,7 @@ from tensorflow.keras.optimizers import Adam
 from ..data import get_directory_iterator
 from ..model import CVAE
 from ..training import RunParameters, SigmaVAELoss
-from ..viz import image_grid_plot
+from ..viz import image_grid
 
 
 def train(
@@ -48,9 +49,8 @@ def train(
     )
 
     reconstruction_reference = next(data_gen)[:10]
-
-    fig = image_grid_plot(reconstruction_reference, n_rows=2, figsize=(20, 10))
-    run[f"reconstruction-reference:original:{parameters.dataset}"].upload(fig)
+    img_grid = image_grid(reconstruction_reference, n_rows=2, clip_range=(0., 1.))
+    run[f"reconstruction-reference:original:{parameters.dataset}"].upload(File.as_image(img_grid))
 
     optimizer = Adam(parameters.learning_rate)
     loss = SigmaVAELoss(beta=parameters.beta, scaling=parameters.loss_scaling)
@@ -64,13 +64,10 @@ def train(
     # track original / reconstructed images for reference
     encoded, means, logvars = model.encode(reconstruction_reference)
     reconstructions = model.decode(encoded)
-    fig = image_grid_plot(
-        np.concatenate([reconstruction_reference, reconstructions]),
-        n_rows=4,
-        figsize=(24, 12),
-        clip_range=(0.0, 1.0),
+    img_grid = image_grid(
+        np.concatenate([reconstruction_reference, reconstructions]), n_rows=4, clip_range=(0.0, 1.0),
     )
-    run[f"reconstruction-reference:reconstructed:{parameters.dataset}"].upload(fig)
+    run[f"reconstruction-reference:reconstructed:{parameters.dataset}"].upload(File.as_image(img_grid))
 
     # track the generated images for reference
     rng = default_rng(seed=parameters.seed)
@@ -78,10 +75,10 @@ def train(
         parameters.gen_reference_mean, 1.0, size=(20, parameters.latent_dimension)
     )
     generated_images = model.decode(refernce_inputs)
-    fig = image_grid_plot(
-        generated_images, n_rows=4, clip_range=(0.0, 1.0), figsize=(32, 16)
+    img_grid = image_grid(
+        generated_images, n_rows=4, clip_range=(0.0, 1.0)
     )
-    run[f"generated-images:{parameters.dataset}"].upload(fig)
+    run[f"generated-images:{parameters.dataset}"].upload(File.as_image(img_grid))
 
     # stop the Neptune run
     run.stop()

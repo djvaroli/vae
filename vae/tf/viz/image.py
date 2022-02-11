@@ -70,6 +70,7 @@ def image_grid_plot(
     clip_range: Optional[Tuple[FloatOrInt, FloatOrInt]] = None,
     dtype=None,
     figsize: Tuple[int, int] = (20, 16),
+    show_axes: bool = False
 ):
     """Given an 4d array of images, plots them as a grid.
 
@@ -89,6 +90,9 @@ def image_grid_plot(
         grid = grid[:, :, 0]
 
     figure = plt.figure(figsize=figsize)
-    plt.axis("off")
+    if show_axes is False:
+        ax = plt.Axes(figure, [0., 0., 1., 1.])
+        ax.set_axis_off()
+        figure.add_axes(ax)
 
     return figure
