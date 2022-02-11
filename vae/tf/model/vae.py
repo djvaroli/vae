@@ -1,4 +1,4 @@
-from typing import List, Tuple, Any
+from typing import Any, List, Tuple
 
 import tensorflow as tf
 from tensorflow import Tensor
@@ -15,13 +15,7 @@ from tensorflow.keras.layers import (
 )
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import plot_model
-
-from tf.data import (
-    ListOrInt,
-    TensorOrNDArray,
-    ThreeTensors,
-    TupleOrInt,
-)
+from tf.data import ListOrInt, TensorOrNDArray, ThreeTensors, TupleOrInt
 
 
 def _get_conv_block(
@@ -29,7 +23,7 @@ def _get_conv_block(
     kernel_size: TupleOrInt,
     strides: TupleOrInt,
     use_bias: bool,
-    padding: str
+    padding: str,
 ) -> List[Layer]:
     """
     Returns a block consisting of A 2D Convolutional layer, a dropout layer and a batch normalization layer
@@ -53,7 +47,7 @@ def _get_conv_block(
             padding=padding,
         ),
         BatchNormalization(),
-        LeakyReLU()
+        LeakyReLU(),
     ]
 
 
@@ -85,15 +79,17 @@ def _get_conv_transpose_block(
             kernel_size=kernel_size,
             strides=strides,
             use_bias=use_bias,
-            padding=padding
+            padding=padding,
         ),
-        LeakyReLU()
+        LeakyReLU(),
     ]
 
 
 class CEncoder:
     def __init__(
-        self, layers: List[Layer], name: str = "convolutional-encoder",
+        self,
+        layers: List[Layer],
+        name: str = "convolutional-encoder",
     ):
         self.layers = layers
 
@@ -135,7 +131,9 @@ class CEncoder:
 
 class CDecoder:
     def __init__(
-        self, layers: List[Layer], name: str = "convolutional-decoder",
+        self,
+        layers: List[Layer],
+        name: str = "convolutional-decoder",
     ):
         self.layers = layers
 
@@ -150,11 +148,7 @@ class CDecoder:
 class CVAE(Model):
     name = "CVAE"
 
-    def __init__(
-        self,
-        encoder: Model,
-        decoder: Model
-    ):
+    def __init__(self, encoder: Model, decoder: Model):
         super(CVAE, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
@@ -181,12 +175,14 @@ class CVAE(Model):
         z, mean, logvars = self.encoder(inputs, training=training)
         return self.decoder(z, training=training)
 
-    def encode(self, inputs: TensorOrNDArray, return_array: bool = True) -> Tuple[Any, Any, Any]:
+    def encode(
+        self, inputs: TensorOrNDArray, return_array: bool = True
+    ) -> Tuple[Any, Any, Any]:
         z, means, logvars = self.encoder(inputs)
         if return_array:
-          z = z.numpy()
-          means = means.numpy()
-          logvars = logvars.numpy()
+            z = z.numpy()
+            means = means.numpy()
+            logvars = logvars.numpy()
         o = (z, means, logvars)
 
         return o
@@ -194,7 +190,7 @@ class CVAE(Model):
     def decode(self, inputs: TensorOrNDArray, return_array: bool = True) -> Any:
         o = self.decoder(inputs)
         if return_array:
-          o = o.numpy()
+            o = o.numpy()
         return o
 
     def train_step(self, data):
@@ -215,15 +211,14 @@ class CVAE(Model):
         }
 
     def plot(self, fp: str) -> str:
-      m = self._model()
-      plot_model(m, to_file=fp, show_shapes=True, expand_nested=True)
-      return fp
-    
+        m = self._model()
+        plot_model(m, to_file=fp, show_shapes=True, expand_nested=True)
+        return fp
+
     @classmethod
     def for_128x128(cls, n_channels: int, latent_features: int = 1024) -> "CVAE":
-        """Creates an instance of the Convolutional VAE for use with 128x128 images.
-        """
-        
+        """Creates an instance of the Convolutional VAE for use with 128x128 images."""
+
         a, b, c = 4, 4, 64
         reshape_into = (a, b, c)
 
@@ -237,7 +232,7 @@ class CVAE(Model):
             Flatten(),
             Dense(latent_features * 2),
         ]
-        
+
         decoder_layers = [
             Dense(a * b * c, activation="relu"),  # in (b, 1024)
             Reshape(reshape_into),  # (b, 4, 4, 64)
@@ -246,19 +241,24 @@ class CVAE(Model):
             *_get_conv_transpose_block(128, 4, 2, False, "same"),  # (b, 32, 32, 128)
             *_get_conv_transpose_block(64, 4, 2, False, "same"),  # (b, 64, 64, 128)
             Conv2DTranspose(
-                n_channels, kernel_size=4, strides=2, use_bias=False, padding="same", activation=None,
+                n_channels,
+                kernel_size=4,
+                strides=2,
+                use_bias=False,
+                padding="same",
+                activation=None,
             ),
         ]  # out (b, 128, 128, n_channels)
-        
+
         encoder = CEncoder(layers=encoder_layers)
         decoder = CDecoder(layers=decoder_layers)
-        
+
         # create the models
         inputs = Input((128, 128, n_channels))
         x, means, logvars = encoder(inputs)
         encoder_model = Model(inputs, [x, means, logvars])
-        
+
         rec = decoder(x)
         decoder_model = Model(x, rec)
-        
+
         return cls(encoder_model, decoder_model)

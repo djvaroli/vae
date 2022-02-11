@@ -1,2 +1,2 @@
-from .losses import VAELoss, SigmaVAELoss, _VAELossBase
+from .losses import SigmaVAELoss, VAELoss, _VAELossBase
 from .parameters import RunParameters

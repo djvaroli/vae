@@ -1,11 +1,11 @@
-from abc import abstractclassmethod, ABC
+from abc import ABC, abstractclassmethod
 from curses.ascii import SI
 from typing import Callable
+
 import tensorflow as tf
 from tensorflow import Tensor
 
 from ..data import ThreeTensors
-
 
 tmean = tf.math.reduce_mean
 sq = tf.math.square
@@ -22,15 +22,14 @@ class _VAELossBase(ABC):
     def __init__(
         self, beta: float = 1.0, scaling: float = 1e-4, kl_reduction: Callable = tsum
     ) -> None:
-        """Base class for implmenting variations of the VAE losses
-        """
-        
+        """Base class for implmenting variations of the VAE losses"""
+
         self.scaling = scaling
         self.beta = beta
         self.kl_reduction = kl_reduction
 
     def kld_w_std_normal(self, means: Tensor, logvars: Tensor) -> Tensor:
-        """Computes the KL Divergence between the distribution N(means, I*logvars) and the standard normal distribution of the same dimension. 
+        """Computes the KL Divergence between the distribution N(means, I*logvars) and the standard normal distribution of the same dimension.
 
         Args:
             means (Tensor): A vector of means characterizing the distribution of the latent space.
@@ -60,9 +59,15 @@ class _VAELossBase(ABC):
         self, image: Tensor, reconstruction: Tensor, means: Tensor, logvars: Tensor
     ) -> ThreeTensors:
         kld_loss_term = self.scaling * self.beta * self.kld_w_std_normal(means, logvars)
-        reconstruction_loss_term = self.scaling * self.reconstruction_loss(image, reconstruction)
-        
-        return reconstruction_loss_term + kld_loss_term, reconstruction_loss_term, kld_loss_term
+        reconstruction_loss_term = self.scaling * self.reconstruction_loss(
+            image, reconstruction
+        )
+
+        return (
+            reconstruction_loss_term + kld_loss_term,
+            reconstruction_loss_term,
+            kld_loss_term,
+        )
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}("
@@ -82,7 +87,7 @@ class _VAELossBase(ABC):
 class VAELoss(_VAELossBase):
     def __init__(self, beta: float = 1, scaling: float = 0.0001) -> None:
         """Implements VAE Loss. Optional beta parameter can be used to enforce greater or smaller penalty on the KL Divergence term of the total loss.
-        
+
         Args:
             beta (float, optional):  Controls the impact of the KL Divergence on the total VAE loss. Defaults to 1.
             scaling (float, optional): A scalar value that will be applied to the total loss (reconstruction + kld). Defaults to 1e-4.
@@ -131,5 +136,3 @@ class SigmaVAELoss(_VAELossBase):
             0.5 * pow((image - reconstruction) / exp(log_sigma_opt), 2) + log_sigma_opt
         )
         return tsum(r_loss)
-
-

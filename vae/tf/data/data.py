@@ -1,9 +1,7 @@
-from typing import Callable
-from typing import Tuple, Optional
+from typing import Callable, Optional, Tuple
 
 import numpy as np
-from tensorflow.keras.preprocessing.image import ImageDataGenerator, DirectoryIterator
-
+from tensorflow.keras.preprocessing.image import DirectoryIterator, ImageDataGenerator
 
 _0to255_to_0to1 = lambda x: x / 255.0
 _0to1_to_0to255 = lambda x: np.astype(
@@ -39,7 +37,7 @@ def get_directory_iterator(
         image_generator = ImageDataGenerator(
             preprocessing_function=preprocessing_function
         )
-    
+
     return image_generator.flow_from_directory(
         directory,
         target_shape,
