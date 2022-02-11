@@ -56,7 +56,8 @@ def train(
     loss = SigmaVAELoss(beta=parameters.beta, scaling=parameters.loss_scaling)
     model.compile(optimizer, loss)
     parameters.set_optimizer_config(optimizer)
-
+    run["training-parameters"] = parameters.as_dict()
+    
     # train the model
     neptune_cbk = NeptuneCallback(run=run, base_namespace="metrics")
     model.fit(data_gen, epochs=parameters.epochs, callbacks=[neptune_cbk])
