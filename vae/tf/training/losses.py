@@ -6,20 +6,21 @@ from tensorflow import Tensor
 
 from ..data import ThreeTensors
 
-tmean = tf.math.reduce_mean
+reduce_mean = tf.math.reduce_mean
 sq = tf.math.square
 exp = tf.math.exp
-tsum = tf.math.reduce_sum
+reduce_sum = tf.math.reduce_sum
 log = tf.math.log
 pow = tf.math.pow
 
 bce = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 mse = tf.keras.losses.mse
+rmse = tf.keras.losses.rmse
 
 
 class _VAELossBase(ABC):
     def __init__(
-        self, beta: float = 1.0, scaling: float = 1e-4, kl_reduction: Callable = tsum
+        self, beta: float = 1.0, scaling: float = 1e-4, kl_reduction: Callable = reduce_mean
     ) -> None:
         """Base class for implmenting variations of the VAE losses"""
 
@@ -54,6 +55,17 @@ class _VAELossBase(ABC):
 
         raise NotImplementedError
 
+    def get_config(self) -> dict:
+        """Returns a dictionary containing the configuration of the loss function.
+
+        Returns:
+            dict: [description]
+        """
+        
+        return dict(
+            scaling=self.scaling, beta=self.beta, kl_reduction=self.kl_reduction
+        )
+        
     def __call__(
         self, image: Tensor, reconstruction: Tensor, means: Tensor, logvars: Tensor
     ) -> ThreeTensors:
@@ -70,9 +82,8 @@ class _VAELossBase(ABC):
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}("
-        config = dict(
-            scaling=self.scaling, beta=self.beta, kl_reduction=self.kl_reduction
-        )
+        config = self.get_config()
+        
         for k, v in config.items():
             s += f"{k}={v}, "
 
@@ -92,7 +103,7 @@ class VAELoss(_VAELossBase):
             scaling (float, optional): A scalar value that will be applied to the total loss (reconstruction + kld). Defaults to 1e-4.
             kl_reduction (Callable, optional): Operation to perform on the vector of KL divergence values. Defatuls to tmean
         """
-        super().__init__(beta, scaling, kl_reduction=tmean)
+        super().__init__(beta, scaling)
 
     def reconstruction_loss(self, image: Tensor, reconstruction: Tensor) -> Tensor:
         """Implements the optimal sigma loss function from https://arxiv.org/abs/2006.13202
@@ -104,8 +115,8 @@ class VAELoss(_VAELossBase):
         Returns:
             Tensor: Tensor containing reconstruction loss
         """
-        mse_loss = mse(image, reconstruction)
-        return tsum(mse_loss)
+        
+        return reduce_mean(mse(image, reconstruction))
 
 
 class SigmaVAELoss(_VAELossBase):
@@ -116,7 +127,7 @@ class SigmaVAELoss(_VAELossBase):
             beta (float, optional): Controls the impact of the KL Divergence on the total VAE loss. Defaults to 1.
             scaling (float, optional): Scaling applied to the total loss. Defaults to 0.0001.
         """
-        super(SigmaVAELoss, self).__init__(beta, scaling, kl_reduction=tmean)
+        super(SigmaVAELoss, self).__init__(beta, scaling, kl_reduction=reduce_sum)
 
     def reconstruction_loss(self, image: Tensor, reconstruction: Tensor) -> Tensor:
         """Implements the optimal sigma loss function from https://arxiv.org/abs/2006.13202
@@ -129,9 +140,10 @@ class SigmaVAELoss(_VAELossBase):
             Tensor: Tensor containing reconstruction loss
         """
 
-        mse_loss = tmean(mse(image, reconstruction))
+        mse_loss = reduce_mean(mse(image, reconstruction))
         log_sigma_opt = 0.5 * log(mse_loss)
         r_loss = (
             0.5 * pow((image - reconstruction) / exp(log_sigma_opt), 2) + log_sigma_opt
-        )
-        return tsum(r_loss)
+        )  
+        
+        return reduce_sum(r_loss)

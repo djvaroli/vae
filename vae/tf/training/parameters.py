@@ -5,7 +5,7 @@ from tensorflow.keras.optimizers import Optimizer
 
 from .losses import SigmaVAELoss, VAELoss, _VAELossBase
 
-__vae_type_to_function = {
+_vae_type_to_function = {
     "vae": VAELoss,
     "beta-vae": VAELoss,
     "sigma-vae": SigmaVAELoss,
@@ -36,4 +36,4 @@ class RunParameters:
 
     @property
     def loss_fn(self) -> _VAELossBase:
-        return __vae_type_to_function[self.vae_type](self.beta, self.loss_scaling)
+        return _vae_type_to_function[self.vae_type](self.beta, self.loss_scaling)
