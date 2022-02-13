@@ -15,7 +15,6 @@ pow = tf.math.pow
 
 bce = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 mse = tf.keras.losses.mse
-rmse = tf.keras.losses.rmse
 
 
 class _VAELossBase(ABC):
