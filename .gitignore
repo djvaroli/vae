@@ -7,4 +7,5 @@
 
 #
 .idea
+.neptune/
 __pycache__

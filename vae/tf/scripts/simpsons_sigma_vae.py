@@ -1,21 +1,19 @@
 import os
 
 import neptune.new as neptune
-from neptune.new.types import File
-import numpy as np
+from tensorflow.python.keras.models import Model
 from neptune.new.integrations.tensorflow_keras import NeptuneCallback
 from numpy.random import default_rng
-from tensorflow.keras.optimizers import Adam
+from tensorflow.python.keras.optimizers import Adam
 
 from ..data import get_directory_iterator
 from ..model import CVAE
 from ..training import RunParameters, SigmaVAELoss
-from ..viz import image_grid
+from ..callbacks import LogReconstructionCallback, LogGenReferenceCallback
 
 
 def train(
     latent_dimension: int,
-    image_dimension: int,
     batch_size: int,
     beta: float,
     epochs: int,
@@ -29,7 +27,7 @@ def train(
 
     parameters = RunParameters(
         latent_dimension=latent_dimension,
-        image_shape=(image_dimension, image_dimension),
+        image_shape=(128, 128),
         batch_size=batch_size,
         dataset="simpsonsfaces",
         vae_type="sigma-vae",
@@ -39,8 +37,13 @@ def train(
         loss_scaling=loss_scaling,
     )
 
-    model = CVAE.for_128x128(3, parameters.latent_dimension)
-    model.plot(f"{parameters.dataset}_model_config.pdf")
+    model: Model = CVAE.for_128x128(3, parameters.latent_dimension)
+    optimizer = Adam(parameters.learning_rate)
+    loss = SigmaVAELoss(beta=parameters.beta, scaling=parameters.loss_scaling)
+    model.compile(optimizer, loss)
+    parameters.set_optimizer_config(optimizer)
+    run["training-parameters"] = parameters.as_dict()
+
     data_gen = get_directory_iterator(
         f"{parameters.dataset}/",
         target_shape=parameters.image_shape,
@@ -48,38 +51,28 @@ def train(
         seed=parameters.seed,
     )
 
-    reconstruction_reference = next(data_gen)[:10]
-    img_grid = image_grid(reconstruction_reference, n_rows=2, clip_range=(0., 1.))
-    run[f"reconstruction-reference:original:{parameters.dataset}"].upload(File.as_image(img_grid))
-
-    optimizer = Adam(parameters.learning_rate)
-    loss = SigmaVAELoss(beta=parameters.beta, scaling=parameters.loss_scaling)
-    model.compile(optimizer, loss)
-    parameters.set_optimizer_config(optimizer)
-    run["training-parameters"] = parameters.as_dict()
-    
-    # train the model
+    # init callbacks
     neptune_cbk = NeptuneCallback(run=run, base_namespace="metrics")
-    model.fit(data_gen, epochs=parameters.epochs, callbacks=[neptune_cbk])
-
-    # track original / reconstructed images for reference
-    encoded, means, logvars = model.encode(reconstruction_reference)
-    reconstructions = model.decode(encoded)
-    img_grid = image_grid(
-        np.concatenate([reconstruction_reference, reconstructions]), n_rows=4, clip_range=(0.0, 1.0),
+    log_reconstruction_cbk = LogReconstructionCallback(
+        run, "reconstruction-reference", next(data_gen)[:10]
     )
-    run[f"reconstruction-reference:reconstructed:{parameters.dataset}"].upload(File.as_image(img_grid))
 
-    # track the generated images for reference
     rng = default_rng(seed=parameters.seed)
-    refernce_inputs = rng.normal(
+    gen_reference = rng.normal(
         parameters.gen_reference_mean, 1.0, size=(20, parameters.latent_dimension)
     )
-    generated_images = model.decode(refernce_inputs)
-    img_grid = image_grid(
-        generated_images, n_rows=4, clip_range=(0.0, 1.0)
+    log_reference_cbk = LogGenReferenceCallback(
+        run, "generated-reference", gen_reference
     )
-    run[f"generated-images:{parameters.dataset}"].upload(File.as_image(img_grid))
+
+    # train model and save weights
+    model.fit(
+        data_gen,
+        epochs=parameters.epochs,
+        callbacks=[neptune_cbk, log_reconstruction_cbk, log_reference_cbk],
+    )
+
+    model.save_weights(f"weights_{run._short_id}.h5")
 
     # stop the Neptune run
     run.stop()
