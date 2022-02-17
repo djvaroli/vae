@@ -1,10 +1,10 @@
 import os
 
 import neptune.new as neptune
-from tensorflow.python.keras.models import Model
+from tensorflow.keras.models import Model
 from neptune.new.integrations.tensorflow_keras import NeptuneCallback
 from numpy.random import default_rng
-from tensorflow.python.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam
 
 from ..data import get_directory_iterator
 from ..model import CVAE
