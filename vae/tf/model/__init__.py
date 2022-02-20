@@ -1,1 +1,1 @@
-from .vae import CVAE
+from .vae import ConvAutoEncoder, ConvVAE

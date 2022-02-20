@@ -1,15 +1,15 @@
 import os
 
 import neptune.new as neptune
-from tensorflow.keras.models import Model
 from neptune.new.integrations.tensorflow_keras import NeptuneCallback
 from numpy.random import default_rng
+from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 
+from ..callbacks import LogGenReferenceCallback, LogReconstructionCallback
 from ..data import get_directory_iterator
 from ..model import CVAE
 from ..training import RunParameters, SigmaVAELoss
-from ..callbacks import LogReconstructionCallback, LogGenReferenceCallback
 
 
 def train(

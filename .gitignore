@@ -9,3 +9,8 @@
 .idea
 .neptune/
 __pycache__
+
+#
+cropped/
+simpsonsfaces/
+*.h5
