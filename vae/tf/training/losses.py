@@ -17,9 +17,59 @@ bce = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 mse = tf.keras.losses.mse
 
 
+class AutoEncoderLoss:
+    def __init__(self, scaling: float = 1.0, *args, **kwargs) -> None:
+        self.scaling = scaling
+
+    def get_config(self) -> dict:
+        """Returns a dictionary containing the configuration of the loss function.
+
+        Returns:
+            dict: [description]
+        """
+
+        return dict(scaling=self.scaling)
+
+    def reconstruction_loss(self, image: Tensor, reconstruction: Tensor) -> Tensor:
+        """Computes reconstruction error.
+
+        Args:
+            image (Tensor): Original images
+            reconstruction (Tensor): Reconstructed images
+
+        Returns:
+            Tensor: Tensor containing reconstruction loss
+        """
+
+        return reduce_mean(mse(image, reconstruction))
+
+    def __call__(self, image: Tensor, reconstruction: Tensor) -> Tensor:
+        reconstruction_loss = self.scaling * self.reconstruction_loss(
+            image, reconstruction
+        )
+        
+        return reconstruction_loss
+
+    def __repr__(self) -> str:
+        s = f"{self.__class__.__name__}("
+        config = self.get_config()
+
+        for k, v in config.items():
+            s += f"{k}={v}, "
+
+        s = s[:-2] + ")"
+        return s
+
+    def __str__(self):
+        return self.__repr__()
+
+
 class _VAELossBase(ABC):
     def __init__(
-        self, beta: float = 1.0, scaling: float = 1e-4, kl_reduction: Callable = reduce_mean
+        self,
+        beta: float = 1.0,
+        scaling: float = 1e-4,
+        kl_reduction: Callable = reduce_mean,
     ) -> None:
         """Base class for implmenting variations of the VAE losses"""
 
@@ -60,11 +110,11 @@ class _VAELossBase(ABC):
         Returns:
             dict: [description]
         """
-        
+
         return dict(
             scaling=self.scaling, beta=self.beta, kl_reduction=self.kl_reduction
         )
-        
+
     def __call__(
         self, image: Tensor, reconstruction: Tensor, means: Tensor, logvars: Tensor
     ) -> ThreeTensors:
@@ -82,7 +132,7 @@ class _VAELossBase(ABC):
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}("
         config = self.get_config()
-        
+
         for k, v in config.items():
             s += f"{k}={v}, "
 
@@ -105,7 +155,7 @@ class VAELoss(_VAELossBase):
         super().__init__(beta, scaling)
 
     def reconstruction_loss(self, image: Tensor, reconstruction: Tensor) -> Tensor:
-        """Implements the optimal sigma loss function from https://arxiv.org/abs/2006.13202
+        """Computes reconstruction error.
 
         Args:
             image (Tensor): Original images
@@ -114,7 +164,7 @@ class VAELoss(_VAELossBase):
         Returns:
             Tensor: Tensor containing reconstruction loss
         """
-        
+
         return reduce_mean(mse(image, reconstruction))
 
 
@@ -143,6 +193,6 @@ class SigmaVAELoss(_VAELossBase):
         log_sigma_opt = 0.5 * log(mse_loss)
         r_loss = (
             0.5 * pow((image - reconstruction) / exp(log_sigma_opt), 2) + log_sigma_opt
-        )  
-        
+        )
+
         return reduce_sum(r_loss)

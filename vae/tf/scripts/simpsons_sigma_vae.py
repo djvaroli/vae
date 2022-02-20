@@ -8,8 +8,16 @@ from tensorflow.keras.optimizers import Adam
 
 from ..callbacks import LogGenReferenceCallback, LogReconstructionCallback
 from ..data import get_directory_iterator
-from ..model import CVAE
-from ..training import RunParameters, SigmaVAELoss
+from ..model import ConvAutoEncoder, ConvVAE
+from ..training import AutoEncoderLoss, RunParameters, SigmaVAELoss, VAELoss
+
+_autoencoder_map = {"vae": ConvVAE, "sigma-vae": ConvVAE, "ae": ConvAutoEncoder}
+
+_ae_type_loss_map = {
+    "vae": VAELoss,
+    "sigma-vae": SigmaVAELoss,
+    "ae": AutoEncoderLoss
+}
 
 
 def train(
@@ -17,8 +25,9 @@ def train(
     batch_size: int,
     beta: float,
     epochs: int,
-    seed: int = 25,
-    loss_scaling: float = 1e-4,
+    vae_type: str,
+    seed: int,
+    loss_scaling: float,
 ):
     run = neptune.init(
         project=os.environ["NEPTUNE_PROJECT"],
@@ -30,16 +39,20 @@ def train(
         image_shape=(128, 128),
         batch_size=batch_size,
         dataset="simpsonsfaces",
-        vae_type="sigma-vae",
+        vae_type=vae_type,
         epochs=epochs,
         seed=seed,
         beta=beta,
         loss_scaling=loss_scaling,
     )
 
-    model: Model = CVAE.for_128x128(3, parameters.latent_dimension)
+    architecture_base = _autoencoder_map[vae_type]
+    model: Model = architecture_base.for_128x128(3, parameters.latent_dimension)
+
     optimizer = Adam(parameters.learning_rate)
-    loss = SigmaVAELoss(beta=parameters.beta, scaling=parameters.loss_scaling)
+    loss_base = _ae_type_loss_map[vae_type]
+    loss = loss_base(beta=parameters.beta, scaling=parameters.loss_scaling)
+    
     model.compile(optimizer, loss)
     parameters.set_optimizer_config(optimizer)
     run["training-parameters"] = parameters.as_dict()
