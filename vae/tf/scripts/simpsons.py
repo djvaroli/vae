@@ -13,11 +13,7 @@ from ..training import AutoEncoderLoss, RunParameters, SigmaVAELoss, VAELoss
 
 _autoencoder_map = {"vae": ConvVAE, "sigma-vae": ConvVAE, "ae": ConvAutoEncoder}
 
-_ae_type_loss_map = {
-    "vae": VAELoss,
-    "sigma-vae": SigmaVAELoss,
-    "ae": AutoEncoderLoss
-}
+_ae_type_loss_map = {"vae": VAELoss, "sigma-vae": SigmaVAELoss, "ae": AutoEncoderLoss}
 
 
 def train(
@@ -52,7 +48,7 @@ def train(
     optimizer = Adam(parameters.learning_rate)
     loss_base = _ae_type_loss_map[vae_type]
     loss = loss_base(beta=parameters.beta, scaling=parameters.loss_scaling)
-    
+
     model.compile(optimizer, loss)
     parameters.set_optimizer_config(optimizer)
     run["training-parameters"] = parameters.as_dict()

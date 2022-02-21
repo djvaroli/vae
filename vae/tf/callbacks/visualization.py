@@ -1,7 +1,7 @@
-from tensorflow.python.keras.callbacks import Callback
+import numpy as np
 from neptune.new.run import Run
 from neptune.new.types import File
-import numpy as np
+from tensorflow.python.keras.callbacks import Callback
 
 from ..viz.image import image_grid
 
@@ -21,7 +21,10 @@ class LogReconstructionCallback(LogNeptuneCallback):
     """Logs the reconstruction of an image and the original source image."""
 
     def _generate_obj_to_log(self):
-        encoded, _, _ = self.model.encode(self.reference_array)
+        encoded = self.model.encode(self.reference_array)
+        if isinstance(encoded, tuple):
+            encoded = encoded[0]
+
         reconstructions = self.model.decode(encoded)
         obj_to_log = image_grid(
             np.concatenate([self.reference_array, reconstructions]),
