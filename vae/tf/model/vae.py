@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import Any, List, Tuple
 
 import tensorflow as tf
@@ -196,7 +197,7 @@ class ConvAutoEncoder(Model):
     def _model(self) -> Model:
         encoder_inputs = self.encoder.inputs
         encoder_outputs = self.encoder.outputs
-        if isinstance(encoder_outputs, tuple):
+        if isinstance(encoder_outputs, Iterable):
             z = encoder_outputs[0]
         else:
             z = encoder_outputs
@@ -217,7 +218,7 @@ class ConvAutoEncoder(Model):
         """
 
         encoder_outputs = self.encoder(inputs, training=training)
-        if isinstance(encoder_outputs, tuple):
+        if isinstance(encoder_outputs, Iterable):
             z = encoder_outputs[0]
         else:
             z = encoder_outputs
@@ -348,9 +349,8 @@ class ConvVAE(ConvAutoEncoder):
             z = z.numpy()
             means = means.numpy()
             logvars = logvars.numpy()
-        o = (z, means, logvars)
 
-        return o
+        return z, means, logvars
 
     def train_step(self, data):
         with tf.GradientTape() as tape:
