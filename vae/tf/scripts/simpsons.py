@@ -24,6 +24,7 @@ def train(
     vae_type: str,
     seed: int,
     loss_scaling: float,
+    learning_rate: float,
 ):
     run = neptune.init(
         project=os.environ["NEPTUNE_PROJECT"],
@@ -40,6 +41,7 @@ def train(
         seed=seed,
         beta=beta,
         loss_scaling=loss_scaling,
+        learning_rate=learning_rate,
     )
 
     architecture_base = _autoencoder_map[vae_type]
